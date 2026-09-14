@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>こめ蔵帳 — 仕入れ・配送管理</title>
+<meta name="theme-color" content="#4E5C31">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="こめ蔵帳">
+<style>
+  :root{
+    --bg:#FAF8F2;
+    --surface:#FFFFFF;
+    --surface-2:#F3F0E6;
+    --border:#E4DFCB;
+    --ink:#2B2A1F;
+    --ink-soft:#6B6858;
+    --ink-faint:#948F79;
+    --primary:#6E7F45;
+    --primary-dark:#4E5C31;
+    --primary-bg:#E9EEDC;
+    --accent:#A9793E;
+    --accent-bg:#F3E7D6;
+    --danger:#A6432E;
+    --danger-bg:#F5E6E1;
+    --radius-s:6px;
+    --radius-m:10px;
+    --shadow-1: 0 1px 2px rgba(43,42,31,0.06), 0 1px 1px rgba(43,42,31,0.04);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic","Meiryo",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  button{font-family:inherit;}
+  input,select,textarea{font-family:inherit;}
+
+  /* Header */
+  header.appbar{
+    background:var(--primary-dark);
+    color:#F4F1E4;
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .brand .mark{
+    font-size:22px;
+    line-height:1;
+  }
+  .brand h1{
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:.02em;
+  }
+  .stock-pill{
+    background:rgba(255,255,255,0.12);
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:12.5px;
+    color:#F4F1E4;
+    white-space:nowrap;
+  }
+  .stock-pill b{font-size:14px;}
+
+  /* Tabs */
+  nav.tabs{
+    display:flex;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:52px;
+    z-index:19;
+    overflow-x:auto;
+  }
+  nav.tabs button{
+    flex:1;
+    min-width:84px;
+    background:none;
+    border:none;
+    padding:12px 8px 10px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button.active{
+    color:var(--primary-dark);
+    border-bottom-color:var(--primary);
+    font-weight:600;
+  }
+
+  main{
+    flex:1;
+    width:100%;
+    max-width:880px;
+    margin:0 auto;
+    padding:18px 16px 64px;
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .section-title{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin:22px 0 10px;
+  }
+  .section-title:first-child{margin-top:0;}
+
+  /* Card / form */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-m);
+    padding:16px;
+    box-shadow:var(--shadow-1);
+  }
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 12px;
+  }
+  .form-grid .full{grid-column:1/-1;}
+  label{
+    display:block;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  input[type=text],input[type=date],input[type=number],select,textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:var(--radius-s);
+    padding:9px 10px;
+    font-size:14.5px;
+    color:var(--ink);
+    background:var(--surface);
+  }
+  input:focus,select:focus,textarea:focus{
+    outline:2px solid var(--primary);
+    outline-offset:1px;
+    border-color:var(--primary);
+  }
+  textarea{resize:vertical;min-height:44px;}
+  .amount-readout{
+    font-size:14.5px;
+    padding:9px 10px;
+    background:var(--surface-2);
+    border-radius:var(--radius-s);
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .btn-row{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  button.btn{
+    border:none;
+    border-radius:var(--radius-s);
+    padding:10px 16px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.btn.primary{background:var(--primary);color:#fff;}
+  button.btn.primary:hover{background:var(--primary-dark);}
+  button.btn.ghost{background:var(--surface-2);color:var(--ink-soft);}
+  button.btn.ghost:hover{background:var(--border);}
+  button.btn.danger-text{background:none;color:var(--danger);padding:10px 8px;}
+
+  /* Filter bar */
+  .filter-bar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:14px 0 10px;
+  }
+  .filter-bar select,.filter-bar input{
+    width:auto;
+    min-width:120px;
+    flex:1;
+  }
+  .filter-bar button{
+    flex:0 0 auto;
+  }
+
+  /* Records list */
+  .record-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:4px;
+  }
+  .record{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-s);
+    padding:11px 12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .record .rmain{flex:1;min-width:0;}
+  .record .rdate{
+    font-size:11.5px;
+    color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .record .rtitle{
+    font-size:14.5px;
+    font-weight:600;
+    margin:2px 0 2px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .record .rsub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .record .ramount{
+    font-size:15px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+    color:var(--ink);
+  }
+  .record .ractions{
+    display:flex;
+    gap:2px;
+    margin-top:6px;
+  }
+  .record .ractions button{
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    font-size:12px;
+    padding:4px 6px;
+    cursor:pointer;
+    border-radius:4px;
+  }
+  .record .ractions button:hover{background:var(--surface-2);color:var(--ink);}
+  .record .ractions button.del:hover{color:var(--danger);}
+
+  .empty-state{
+    text-align:center;
+    padding:32px 16px;
+    color:var(--ink-faint);
+    font-size:13.5px;
+    border:1px dashed var(--border);
+    border-radius:var(--radius-m);
+  }
+
+  /* Summary cards */
+  .stock-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px;
+  }
+  .stock-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-m);
+    padding:14px;
+  }
+  .stock-card .variety{font-size:12.5px;color:var(--ink-soft);}
+  .stock-card .qty{font-size:22px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .stock-card .qty span{font-size:12.5px;font-weight:400;color:var(--ink-soft);}
+  .stock-card.low .qty{color:var(--danger);}
+
+  table.report-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-m);
+    overflow:hidden;
+  }
+  table.report-table th,table.report-table td{
+    padding:9px 10px;
+    text-align:right;
+    border-bottom:1px solid var(--border);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  table.report-table th:first-child,table.report-table td:first-child{text-align:left;}
+  table.report-table th{
+    background:var(--surface-2);
+    color:var(--ink-soft);
+    font-weight:600;
+    font-size:12px;
+  }
+  table.report-table tr:last-child td{border-bottom:none;}
+  .table-scroll{overflow-x:auto;}
+
+  .pill-tag{
+    display:inline-block;
+    background:var(--accent-bg);
+    color:var(--accent);
+    border-radius:999px;
+    padding:2px 9px;
+    font-size:11px;
+    font-weight:600;
+    margin-left:6px;
+  }
+
+  select.customer-select{background:var(--surface);}
+
+  .toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%) translateY(10px);
+    background:var(--ink);
+    color:#F4F1E4;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:480px){
+    .form-grid{grid-template-columns:1fr;}
+    .stock-pill{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="mark">🌾</span>
+    <h1>こめ蔵帳</h1>
+  </div>
+  <div class="stock-pill" id="headerStock">在庫 —</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="purchase">仕入れ</button>
+  <button class="tab-btn" data-tab="delivery">配送</button>
+  <button class="tab-btn" data-tab="customer">得意先</button>
+  <button class="tab-btn" data-tab="report">集計</button>
+</nav>
+
+<main>
+
+  <!-- 仕入れ -->
+  <section class="panel active" id="panel-purchase">
+    <div class="section-title" id="purchaseFormTitle">仕入れを記録</div>
+    <div class="card">
+      <div class="form-grid">
+        <div><label>仕入れ日</label><input type="date" id="p-date"></div>
+        <div><label>仕入れ先</label><input type="text" id="p-supplier" list="supplierList" placeholder="例）〇〇農園"></div>
+        <div><label>銘柄</label><input type="text" id="p-variety" list="varietyList" placeholder="例）コシヒカリ"></div>
+        <div><label>数量 (kg)</label><input type="number" id="p-qty" step="0.1" min="0" placeholder="0"></div>
+        <div><label>単価 (円/kg)</label><input type="number" id="p-price" step="1" min="0" placeholder="0"></div>
+        <div><label>仕入れ金額</label><div class="amount-readout" id="p-amount">¥0</div></div>
+        <div class="full"><label>メモ</label><textarea id="p-note" placeholder="産地・等級・支払方法など"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="p-save">記録する</button>
+        <button class="btn ghost" id="p-cancel" style="display:none;">編集をやめる</button>
+      </div>
+    </div>
+
+    <div class="section-title">仕入れ履歴</div>
+    <div class="filter-bar">
+      <select id="p-filter-supplier"><option value="">仕入れ先：すべて</option></select>
+      <select id="p-filter-month"><option value="">月：すべて</option></select>
+    </div>
+    <div class="record-list" id="p-list"></div>
+    <div class="btn-row"><button class="btn ghost" id="p-export">CSVで書き出す</button></div>
+  </section>
+
+  <!-- 配送 -->
+  <section class="panel" id="panel-delivery">
+    <div class="section-title" id="deliveryFormTitle">配送を記録</div>
+    <div class="card">
+      <div class="form-grid">
+        <div><label>配送日</label><input type="date" id="d-date"></div>
+        <div>
+          <label>配送先</label>
+          <select id="d-customer" class="customer-select">
+            <option value="">得意先を選択</option>
+          </select>
+        </div>
+        <div><label>銘柄</label><input type="text" id="d-variety" list="varietyList" placeholder="例）コシヒカリ"></div>
+        <div><label>数量 (kg)</label><input type="number" id="d-qty" step="0.1" min="0" placeholder="0"></div>
+        <div><label>単価 (円/kg・任意)</label><input type="number" id="d-price" step="1" min="0" placeholder="0"></div>
+        <div><label>金額</label><div class="amount-readout" id="d-amount">¥0</div></div>
+        <div class="full"><label>メモ</label><textarea id="d-note" placeholder="配送方法・受け渡し場所など"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="d-save">記録する</button>
+        <button class="btn ghost" id="d-cancel" style="display:none;">編集をやめる</button>
+      </div>
+    </div>
+
+    <div class="section-title">配送履歴</div>
+    <div class="filter-bar">
+      <select id="d-filter-customer"><option value="">配送先：すべて</option></select>
+      <select id="d-filter-month"><option value="">月：すべて</option></select>
+    </div>
+    <div class="record-list" id="d-list"></div>
+    <div class="btn-row"><button class="btn ghost" id="d-export">CSVで書き出す</button></div>
+  </section>
+
+  <!-- 得意先 -->
+  <section class="panel" id="panel-customer">
+    <div class="section-title" id="customerFormTitle">得意先を登録</div>
+    <div class="card">
+      <div class="form-grid">
+        <div><label>得意先名</label><input type="text" id="c-name" placeholder="例）〇〇食堂"></div>
+        <div><label>連絡先</label><input type="text" id="c-contact" placeholder="電話番号など"></div>
+        <div class="full"><label>配送先住所</label><input type="text" id="c-address" placeholder="住所"></div>
+        <div class="full"><label>メモ</label><textarea id="c-note" placeholder="定期配送の曜日・希望銘柄など"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="c-save">登録する</button>
+        <button class="btn ghost" id="c-cancel" style="display:none;">編集をやめる</button>
+      </div>
+    </div>
+
+    <div class="section-title">得意先一覧</div>
+    <div class="record-list" id="c-list"></div>
+  </section>
+
+  <!-- 集計 -->
+  <section class="panel" id="panel-report">
+    <div class="section-title">在庫（銘柄別）</div>
+    <div class="stock-grid" id="stockGrid"></div>
+
+    <div class="section-title">月別サマリー</div>
+    <div class="table-scroll">
+      <table class="report-table" id="monthlyTable">
+        <thead><tr><th>月</th><th>仕入量(kg)</th><th>仕入額</th><th>配送量(kg)</th><th>配送額</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section-title">得意先別 配送実績</div>
+    <div class="table-scroll">
+      <table class="report-table" id="customerTable">
+        <thead><tr><th>得意先</th><th>配送回数</th><th>配送量(kg)</th><th>配送額</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section-title">仕入れ先別 実績</div>
+    <div class="table-scroll">
+      <table class="report-table" id="supplierTable">
+        <thead><tr><th>仕入れ先</th><th>仕入回数</th><th>仕入量(kg)</th><th>仕入額</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<datalist id="supplierList"></datalist>
+<datalist id="varietyList"></datalist>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORE_KEY = "komegura_data_v1";
+  var data = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return { purchases:[], deliveries:[], customers:[] };
+  }
+  function save(){
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  }
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+  function fmtYen(n){
+    return "¥" + Math.round(n).toLocaleString("ja-JP");
+  }
+  function fmtKg(n){
+    var v = Math.round(n*10)/10;
+    return v.toLocaleString("ja-JP") + " kg";
+  }
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+  function monthKey(dateStr){
+    return dateStr ? dateStr.slice(0,7) : "";
+  }
+  function todayStr(){
+    var d = new Date();
+    var mm = String(d.getMonth()+1).padStart(2,"0");
+    var dd = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear()+"-"+mm+"-"+dd;
+  }
+
+  // ---------- Tabs ----------
+  var tabBtns = document.querySelectorAll(".tab-btn");
+  tabBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      tabBtns.forEach(function(b){ b.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+      btn.classList.add("active");
+      document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
+      if(btn.dataset.tab === "report") renderReport();
+      if(btn.dataset.tab === "delivery") renderCustomerSelect();
+    });
+  });
+
+  // ---------- Shared datalist / dropdown refresh ----------
+  function refreshDatalists(){
+    var suppliers = Array.from(new Set(data.purchases.map(function(p){return p.supplier;}).filter(Boolean)));
+    var varieties = Array.from(new Set(
+      data.purchases.map(function(p){return p.variety;})
+      .concat(data.deliveries.map(function(d){return d.variety;}))
+      .filter(Boolean)
+    ));
+    setOptions(document.getElementById("supplierList"), suppliers);
+    setOptions(document.getElementById("varietyList"), varieties);
+
+    var supplierFilter = document.getElementById("p-filter-supplier");
+    var cur1 = supplierFilter.value;
+    supplierFilter.innerHTML = '<option value="">仕入れ先：すべて</option>' +
+      suppliers.map(function(s){return '<option value="'+esc(s)+'">'+esc(s)+'</option>';}).join("");
+    supplierFilter.value = cur1;
+  }
+  function setOptions(dl, arr){
+    dl.innerHTML = arr.map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+  }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function renderCustomerSelect(){
+    var sel = document.getElementById("d-customer");
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">得意先を選択</option>' +
+      data.customers.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join("");
+    sel.value = cur;
+
+    var filt = document.getElementById("d-filter-customer");
+    var cur2 = filt.value;
+    filt.innerHTML = '<option value="">配送先：すべて</option>' +
+      data.customers.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join("");
+    filt.value = cur2;
+  }
+
+  function refreshMonthFilters(){
+    var pMonths = Array.from(new Set(data.purchases.map(function(p){return monthKey(p.date);}))).sort().reverse();
+    var dMonths = Array.from(new Set(data.deliveries.map(function(d){return monthKey(d.date);}))).sort().reverse();
+    fillMonthSelect(document.getElementById("p-filter-month"), pMonths);
+    fillMonthSelect(document.getElementById("d-filter-month"), dMonths);
+  }
+  function fillMonthSelect(sel, months){
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">月：すべて</option>' +
+      months.map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join("");
+    sel.value = cur;
+  }
+
+  // ---------- Purchase ----------
+  var pEditId = null;
+  var pDate=document.getElementById("p-date"), pSupplier=document.getElementById("p-supplier"),
+      pVariety=document.getElementById("p-variety"), pQty=document.getElementById("p-qty"),
+      pPrice=document.getElementById("p-price"), pAmount=document.getElementById("p-amount"),
+      pNote=document.getElementById("p-note");
+
+  function pCalc(){
+    var q = parseFloat(pQty.value)||0, pr = parseFloat(pPrice.value)||0;
+    pAmount.textContent = fmtYen(q*pr);
+  }
+  [pQty,pPrice].forEach(function(el){ el.addEventListener("input", pCalc); });
+  pDate.value = todayStr();
+
+  document.getElementById("p-save").addEventListener("click", function(){
+    if(!pDate.value || !pSupplier.value.trim() || !(parseFloat(pQty.value)>0)){
+      toast("日付・仕入れ先・数量を入力してください"); return;
+    }
+    var qty = parseFloat(pQty.value)||0, price = parseFloat(pPrice.value)||0;
+    var rec = {
+      id: pEditId || uid(),
+      date: pDate.value,
+      supplier: pSupplier.value.trim(),
+      variety: pVariety.value.trim(),
+      qty: qty,
+      price: price,
+      amount: qty*price,
+      note: pNote.value.trim()
+    };
+    if(pEditId){
+      var idx = data.purchases.findIndex(function(r){return r.id===pEditId;});
+      if(idx>-1) data.purchases[idx] = rec;
+      toast("仕入れを更新しました");
+    }else{
+      data.purchases.push(rec);
+      toast("仕入れを記録しました");
+    }
+    save();
+    resetPurchaseForm();
+    renderPurchaseList();
+    refreshDatalists();
+    refreshMonthFilters();
+    updateHeaderStock();
+  });
+  document.getElementById("p-cancel").addEventListener("click", resetPurchaseForm);
+
+  function resetPurchaseForm(){
+    pEditId = null;
+    document.getElementById("purchaseFormTitle").textContent = "仕入れを記録";
+    document.getElementById("p-cancel").style.display = "none";
+    pDate.value = todayStr(); pSupplier.value=""; pVariety.value=""; pQty.value=""; pPrice.value=""; pNote.value="";
+    pAmount.textContent = "¥0";
+  }
+
+  function editPurchase(id){
+    var r = data.purchases.find(function(x){return x.id===id;});
+    if(!r) return;
+    pEditId = id;
+    document.getElementById("purchaseFormTitle").textContent = "仕入れを編集";
+    document.getElementById("p-cancel").style.display = "inline-block";
+    pDate.value=r.date; pSupplier.value=r.supplier; pVariety.value=r.variety;
+    pQty.value=r.qty; pPrice.value=r.price; pNote.value=r.note||"";
+    pCalc();
+    document.querySelector('[data-tab="purchase"]').click();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function deletePurchase(id){
+    if(!confirm("この仕入れ記録を削除しますか？")) return;
+    data.purchases = data.purchases.filter(function(r){return r.id!==id;});
+    save(); renderPurchaseList(); refreshDatalists(); refreshMonthFilters(); updateHeaderStock();
+    toast("削除しました");
+  }
+
+  document.getElementById("p-filter-supplier").addEventListener("change", renderPurchaseList);
+  document.getElementById("p-filter-month").addEventListener("change", renderPurchaseList);
+
+  function renderPurchaseList(){
+    var list = document.getElementById("p-list");
+    var fSupplier = document.getElementById("p-filter-supplier").value;
+    var fMonth = document.getElementById("p-filter-month").value;
+    var items = data.purchases.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    items = items.filter(function(r){
+      if(fSupplier && r.supplier!==fSupplier) return false;
+      if(fMonth && monthKey(r.date)!==fMonth) return false;
+      return true;
+    });
+    if(items.length===0){ list.innerHTML = '<div class="empty-state">まだ仕入れ記録がありません</div>'; return; }
+    list.innerHTML = items.map(function(r){
+      return '<div class="record">'+
+        '<div class="rmain">'+
+          '<div class="rdate">'+r.date+'</div>'+
+          '<div class="rtitle">'+esc(r.supplier)+(r.variety?'<span class="pill-tag">'+esc(r.variety)+'</span>':'')+'</div>'+
+          '<div class="rsub">'+fmtKg(r.qty)+'　×　¥'+r.price+'/kg'+(r.note?'　・　'+esc(r.note):'')+'</div>'+
+          '<div class="ractions">'+
+            '<button onclick="komegura.editPurchase(\''+r.id+'\')">編集</button>'+
+            '<button class="del" onclick="komegura.deletePurchase(\''+r.id+'\')">削除</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="ramount">'+fmtYen(r.amount)+'</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  document.getElementById("p-export").addEventListener("click", function(){
+    exportCSV(data.purchases, ["date","supplier","variety","qty","price","amount","note"],
+      ["日付","仕入れ先","銘柄","数量kg","単価","金額","メモ"], "仕入れ記録.csv");
+  });
+
+  // ---------- Delivery ----------
+  var dEditId = null;
+  var dDate=document.getElementById("d-date"), dCustomer=document.getElementById("d-customer"),
+      dVariety=document.getElementById("d-variety"), dQty=document.getElementById("d-qty"),
+      dPrice=document.getElementById("d-price"), dAmount=document.getElementById("d-amount"),
+      dNote=document.getElementById("d-note");
+
+  function dCalc(){
+    var q=parseFloat(dQty.value)||0, pr=parseFloat(dPrice.value)||0;
+    dAmount.textContent = fmtYen(q*pr);
+  }
+  [dQty,dPrice].forEach(function(el){ el.addEventListener("input", dCalc); });
+  dDate.value = todayStr();
+
+  document.getElementById("d-save").addEventListener("click", function(){
+    if(!dDate.value || !dCustomer.value || !(parseFloat(dQty.value)>0)){
+      toast("日付・配送先・数量を入力してください"); return;
+    }
+    var qty=parseFloat(dQty.value)||0, price=parseFloat(dPrice.value)||0;
+    var rec = {
+      id: dEditId || uid(),
+      date: dDate.value,
+      customerId: dCustomer.value,
+      variety: dVariety.value.trim(),
+      qty: qty,
+      price: price,
+      amount: qty*price,
+      note: dNote.value.trim()
+    };
+    if(dEditId){
+      var idx = data.deliveries.findIndex(function(r){return r.id===dEditId;});
+      if(idx>-1) data.deliveries[idx] = rec;
+      toast("配送を更新しました");
+    }else{
+      data.deliveries.push(rec);
+      toast("配送を記録しました");
+    }
+    save();
+    resetDeliveryForm();
+    renderDeliveryList();
+    refreshDatalists();
+    refreshMonthFilters();
+    updateHeaderStock();
+  });
+  document.getElementById("d-cancel").addEventListener("click", resetDeliveryForm);
+
+  function resetDeliveryForm(){
+    dEditId = null;
+    document.getElementById("deliveryFormTitle").textContent = "配送を記録";
+    document.getElementById("d-cancel").style.display = "none";
+    dDate.value = todayStr(); dCustomer.value=""; dVariety.value=""; dQty.value=""; dPrice.value=""; dNote.value="";
+    dAmount.textContent = "¥0";
+  }
+
+  function editDelivery(id){
+    var r = data.deliveries.find(function(x){return x.id===id;});
+    if(!r) return;
+    dEditId = id;
+    document.getElementById("deliveryFormTitle").textContent = "配送を編集";
+    document.getElementById("d-cancel").style.display = "inline-block";
+    dDate.value=r.date; dCustomer.value=r.customerId; dVariety.value=r.variety;
+    dQty.value=r.qty; dPrice.value=r.price; dNote.value=r.note||"";
+    dCalc();
+    document.querySelector('[data-tab="delivery"]').click();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function deleteDelivery(id){
+    if(!confirm("この配送記録を削除しますか？")) return;
+    data.deliveries = data.deliveries.filter(function(r){return r.id!==id;});
+    save(); renderDeliveryList(); refreshDatalists(); refreshMonthFilters(); updateHeaderStock();
+    toast("削除しました");
+  }
+
+  document.getElementById("d-filter-customer").addEventListener("change", renderDeliveryList);
+  document.getElementById("d-filter-month").addEventListener("change", renderDeliveryList);
+
+  function customerName(id){
+    var c = data.customers.find(function(x){return x.id===id;});
+    return c ? c.name : "（削除済みの得意先）";
+  }
+
+  function renderDeliveryList(){
+    var list = document.getElementById("d-list");
+    var fCustomer = document.getElementById("d-filter-customer").value;
+    var fMonth = document.getElementById("d-filter-month").value;
+    var items = data.deliveries.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    items = items.filter(function(r){
+      if(fCustomer && r.customerId!==fCustomer) return false;
+      if(fMonth && monthKey(r.date)!==fMonth) return false;
+      return true;
+    });
+    if(items.length===0){ list.innerHTML = '<div class="empty-state">まだ配送記録がありません</div>'; return; }
+    list.innerHTML = items.map(function(r){
+      return '<div class="record">'+
+        '<div class="rmain">'+
+          '<div class="rdate">'+r.date+'</div>'+
+          '<div class="rtitle">'+esc(customerName(r.customerId))+(r.variety?'<span class="pill-tag">'+esc(r.variety)+'</span>':'')+'</div>'+
+          '<div class="rsub">'+fmtKg(r.qty)+(r.price?'　×　¥'+r.price+'/kg':'')+(r.note?'　・　'+esc(r.note):'')+'</div>'+
+          '<div class="ractions">'+
+            '<button onclick="komegura.editDelivery(\''+r.id+'\')">編集</button>'+
+            '<button class="del" onclick="komegura.deleteDelivery(\''+r.id+'\')">削除</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="ramount">'+(r.amount?fmtYen(r.amount):'—')+'</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  document.getElementById("d-export").addEventListener("click", function(){
+    var rows = data.deliveries.map(function(r){
+      return Object.assign({}, r, {customerName: customerName(r.customerId)});
+    });
+    exportCSV(rows, ["date","customerName","variety","qty","price","amount","note"],
+      ["配送日","配送先","銘柄","数量kg","単価","金額","メモ"], "配送記録.csv");
+  });
+
+  // ---------- Customers ----------
+  var cEditId = null;
+  var cName=document.getElementById("c-name"), cContact=document.getElementById("c-contact"),
+      cAddress=document.getElementById("c-address"), cNote=document.getElementById("c-note");
+
+  document.getElementById("c-save").addEventListener("click", function(){
+    if(!cName.value.trim()){ toast("得意先名を入力してください"); return; }
+    var rec = {
+      id: cEditId || uid(),
+      name: cName.value.trim(),
+      contact: cContact.value.trim(),
+      address: cAddress.value.trim(),
+      note: cNote.value.trim()
+    };
+    if(cEditId){
+      var idx = data.customers.findIndex(function(r){return r.id===cEditId;});
+      if(idx>-1) data.customers[idx]=rec;
+      toast("得意先を更新しました");
+    }else{
+      data.customers.push(rec);
+      toast("得意先を登録しました");
+    }
+    save();
+    resetCustomerForm();
+    renderCustomerList();
+    renderCustomerSelect();
+  });
+  document.getElementById("c-cancel").addEventListener("click", resetCustomerForm);
+
+  function resetCustomerForm(){
+    cEditId = null;
+    document.getElementById("customerFormTitle").textContent = "得意先を登録";
+    document.getElementById("c-cancel").style.display = "none";
+    cName.value=""; cContact.value=""; cAddress.value=""; cNote.value="";
+  }
+  function editCustomer(id){
+    var r = data.customers.find(function(x){return x.id===id;});
+    if(!r) return;
+    cEditId = id;
+    document.getElementById("customerFormTitle").textContent = "得意先を編集";
+    document.getElementById("c-cancel").style.display = "inline-block";
+    cName.value=r.name; cContact.value=r.contact; cAddress.value=r.address; cNote.value=r.note||"";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function deleteCustomer(id){
+    var used = data.deliveries.some(function(d){return d.customerId===id;});
+    if(used && !confirm("この得意先には配送記録があります。削除すると記録上は「削除済みの得意先」と表示されます。削除しますか？")) return;
+    if(!used && !confirm("この得意先を削除しますか？")) return;
+    data.customers = data.customers.filter(function(r){return r.id!==id;});
+    save(); renderCustomerList(); renderCustomerSelect(); renderDeliveryList();
+    toast("削除しました");
+  }
+
+  function renderCustomerList(){
+    var list = document.getElementById("c-list");
+    var items = data.customers.slice().sort(function(a,b){return a.name.localeCompare(b.name,"ja");});
+    if(items.length===0){ list.innerHTML = '<div class="empty-state">まだ得意先が登録されていません</div>'; return; }
+    list.innerHTML = items.map(function(r){
+      return '<div class="record">'+
+        '<div class="rmain">'+
+          '<div class="rtitle">'+esc(r.name)+'</div>'+
+          '<div class="rsub">'+(r.address?esc(r.address):'')+(r.contact?'　・　'+esc(r.contact):'')+'</div>'+
+          (r.note?'<div class="rsub">'+esc(r.note)+'</div>':'')+
+          '<div class="ractions">'+
+            '<button onclick="komegura.editCustomer(\''+r.id+'\')">編集</button>'+
+            '<button class="del" onclick="komegura.deleteCustomer(\''+r.id+'\')">削除</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  // ---------- Report ----------
+  function updateHeaderStock(){
+    var byVariety = stockByVariety();
+    var total = Object.keys(byVariety).reduce(function(s,k){return s+byVariety[k];},0);
+    document.getElementById("headerStock").innerHTML = "在庫合計 <b>"+fmtKg(total)+"</b>";
+  }
+
+  function stockByVariety(){
+    var map = {};
+    data.purchases.forEach(function(p){
+      var key = p.variety || "（銘柄未指定）";
+      map[key] = (map[key]||0) + p.qty;
+    });
+    data.deliveries.forEach(function(d){
+      var key = d.variety || "（銘柄未指定）";
+      map[key] = (map[key]||0) - d.qty;
+    });
+    return map;
+  }
+
+  function renderReport(){
+    // Stock cards
+    var stock = stockByVariety();
+    var keys = Object.keys(stock).sort();
+    var grid = document.getElementById("stockGrid");
+    if(keys.length===0){
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">データがまだありません</div>';
+    }else{
+      grid.innerHTML = keys.map(function(k){
+        var v = stock[k];
+        return '<div class="stock-card'+(v<0?' low':'')+'">'+
+          '<div class="variety">'+esc(k)+'</div>'+
+          '<div class="qty">'+fmtKg(v).replace(" kg",'')+' <span>kg</span></div>'+
+        '</div>';
+      }).join("");
+    }
+
+    // Monthly table
+    var months = {};
+    data.purchases.forEach(function(p){
+      var m = monthKey(p.date); months[m] = months[m] || {pq:0,pa:0,dq:0,da:0}; months[m].pq+=p.qty; months[m].pa+=p.amount;
+    });
+    data.deliveries.forEach(function(d){
+      var m = monthKey(d.date); months[m] = months[m] || {pq:0,pa:0,dq:0,da:0}; months[m].dq+=d.qty; months[m].da+=d.amount;
+    });
+    var mkeys = Object.keys(months).sort().reverse();
+    var mtbody = document.querySelector("#monthlyTable tbody");
+    mtbody.innerHTML = mkeys.length ? mkeys.map(function(m){
+      var r = months[m];
+      return '<tr><td>'+m+'</td><td>'+fmtKg(r.pq)+'</td><td>'+fmtYen(r.pa)+'</td><td>'+fmtKg(r.dq)+'</td><td>'+fmtYen(r.da)+'</td></tr>';
+    }).join("") : '<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);">データがありません</td></tr>';
+
+    // Customer table
+    var byCustomer = {};
+    data.deliveries.forEach(function(d){
+      var key = d.customerId;
+      byCustomer[key] = byCustomer[key] || {count:0,qty:0,amount:0};
+      byCustomer[key].count++; byCustomer[key].qty+=d.qty; byCustomer[key].amount+=d.amount;
+    });
+    var ckeys = Object.keys(byCustomer).sort(function(a,b){return byCustomer[b].amount-byCustomer[a].amount;});
+    var ctbody = document.querySelector("#customerTable tbody");
+    ctbody.innerHTML = ckeys.length ? ckeys.map(function(k){
+      var r = byCustomer[k];
+      return '<tr><td>'+esc(customerName(k))+'</td><td>'+r.count+'</td><td>'+fmtKg(r.qty)+'</td><td>'+fmtYen(r.amount)+'</td></tr>';
+    }).join("") : '<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);">データがありません</td></tr>';
+
+    // Supplier table
+    var bySupplier = {};
+    data.purchases.forEach(function(p){
+      var key = p.supplier;
+      bySupplier[key] = bySupplier[key] || {count:0,qty:0,amount:0};
+      bySupplier[key].count++; bySupplier[key].qty+=p.qty; bySupplier[key].amount+=p.amount;
+    });
+    var skeys = Object.keys(bySupplier).sort(function(a,b){return bySupplier[b].amount-bySupplier[a].amount;});
+    var stbody = document.querySelector("#supplierTable tbody");
+    stbody.innerHTML = skeys.length ? skeys.map(function(k){
+      var r = bySupplier[k];
+      return '<tr><td>'+esc(k)+'</td><td>'+r.count+'</td><td>'+fmtKg(r.qty)+'</td><td>'+fmtYen(r.amount)+'</td></tr>';
+    }).join("") : '<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);">データがありません</td></tr>';
+  }
+
+  // ---------- CSV export ----------
+  function exportCSV(rows, fields, headers, filename){
+    if(rows.length===0){ toast("書き出すデータがありません"); return; }
+    var lines = [headers.join(",")];
+    rows.forEach(function(r){
+      lines.push(fields.map(function(f){
+        var v = r[f]==null ? "" : String(r[f]);
+        if(v.indexOf(",")>-1 || v.indexOf('"')>-1 || v.indexOf("\n")>-1){
+          v = '"' + v.replace(/"/g,'""') + '"';
+        }
+        return v;
+      }).join(","));
+    });
+    var csv = "\uFEFF" + lines.join("\r\n");
+    var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- expose for inline handlers ----------
+  window.komegura = {
+    editPurchase: editPurchase, deletePurchase: deletePurchase,
+    editDelivery: editDelivery, deleteDelivery: deleteDelivery,
+    editCustomer: editCustomer, deleteCustomer: deleteCustomer
+  };
+
+  // ---------- init ----------
+  refreshDatalists();
+  refreshMonthFilters();
+  renderCustomerSelect();
+  renderPurchaseList();
+  renderDeliveryList();
+  renderCustomerList();
+  updateHeaderStock();
+
+  // ---------- PWA service worker ----------
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("service-worker.js").catch(function(){});
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
